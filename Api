@@ -1,0 +1,59 @@
+const API_BASE = 'http://127.0.0.1:5000/api';
+
+const api = {
+
+  // --- Transactions ---
+
+  async getTransactions(filters = {}) {
+    // TODO Week 3: replace with fetch(`${API_BASE}/transactions?...`)
+    // For now reads from localStorage via app.js data store
+    return Promise.resolve(window.store.getTransactions(filters));
+  },
+
+  async addTransaction(data) {
+    // TODO Week 3: return fetch(`${API_BASE}/transactions`, { method:'POST', body: JSON.stringify(data) })
+    return Promise.resolve(window.store.addTransaction(data));
+  },
+
+  async deleteTransaction(id) {
+    // TODO Week 3: return fetch(`${API_BASE}/transactions/${id}`, { method:'DELETE' })
+    return Promise.resolve(window.store.deleteTransaction(id));
+  },
+
+  // --- Summary (dashboard) ---
+
+  async getSummary(month, year) {
+    // TODO Week 3: return fetch(`${API_BASE}/summary/${year}/${month}`)
+    return Promise.resolve(window.store.getSummary(month, year));
+  },
+
+  // --- Budgets ---
+
+  async getBudgets(month, year) {
+    // TODO Week 3: return fetch(`${API_BASE}/budget/${year}/${month}`)
+    return Promise.resolve(window.store.getBudgets(month, year));
+  },
+
+  async saveBudget(data) {
+    // TODO Week 3: return fetch(`${API_BASE}/budget`, { method:'POST', ... })
+    return Promise.resolve(window.store.saveBudget(data));
+  },
+
+  async deleteBudget(id) {
+    return Promise.resolve(window.store.deleteBudget(id));
+  },
+
+  // --- Categories ---
+
+  async getCategories() {
+    return Promise.resolve(window.store.getCategories());
+  },
+
+  async addCategory(name) {
+    return Promise.resolve(window.store.addCategory(name));
+  },
+
+  async deleteCategory(id) {
+    return Promise.resolve(window.store.deleteCategory(id));
+  },
+};
