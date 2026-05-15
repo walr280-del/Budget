@@ -1,59 +1,97 @@
-const API_BASE = 'http://127.0.0.1:5000/api';
+/* ============================================
+   api.js — Flask Backend Communication
+   Week 3: localStorage stubs replaced with
+   real fetch() calls to the Flask API.
+   app.js requires zero changes — same interface.
+   ============================================ */
+
+const API_BASE = "http://127.0.0.1:5000/api";
+
+// Generic fetch wrapper — throws on non-2xx so callers can catch errors
+async function request(path, options = {}) {
+  const res  = await fetch(API_BASE + path, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    const msg = json.errors ? json.errors.join(", ") : (json.error || "Request failed");
+    throw new Error(msg);
+  }
+  return json;
+}
 
 const api = {
 
-  // --- Transactions ---
+  // ── Categories ──────────────────────────────────────────────────────────
 
-  async getTransactions(filters = {}) {
-    // TODO Week 3: replace with fetch(`${API_BASE}/transactions?...`)
-    // For now reads from localStorage via app.js data store
-    return Promise.resolve(window.store.getTransactions(filters));
+  getCategories() {
+    return request("/categories");
   },
 
-  async addTransaction(data) {
-    // TODO Week 3: return fetch(`${API_BASE}/transactions`, { method:'POST', body: JSON.stringify(data) })
-    return Promise.resolve(window.store.addTransaction(data));
+  addCategory(name) {
+    return request("/categories", {
+      method: "POST",
+      body:   JSON.stringify({ name }),
+    });
   },
 
-  async deleteTransaction(id) {
-    // TODO Week 3: return fetch(`${API_BASE}/transactions/${id}`, { method:'DELETE' })
-    return Promise.resolve(window.store.deleteTransaction(id));
+  deleteCategory(id) {
+    return request(`/categories/${id}`, { method: "DELETE" });
   },
 
-  // --- Summary (dashboard) ---
 
-  async getSummary(month, year) {
-    // TODO Week 3: return fetch(`${API_BASE}/summary/${year}/${month}`)
-    return Promise.resolve(window.store.getSummary(month, year));
+  // ── Transactions ─────────────────────────────────────────────────────────
+
+  getTransactions(filters = {}) {
+    const params = new URLSearchParams();
+    // JS months are 0-indexed; Flask/SQLite expects 1-12
+    if (filters.month    !== undefined) params.set("month",       filters.month + 1);
+    if (filters.year     !== undefined) params.set("year",        filters.year);
+    if (filters.search)                 params.set("search",      filters.search);
+    if (filters.category_id)            params.set("category_id", filters.category_id);
+    if (filters.type)                   params.set("type",        filters.type);
+    const qs = params.toString();
+    return request("/transactions" + (qs ? "?" + qs : ""));
   },
 
-  // --- Budgets ---
-
-  async getBudgets(month, year) {
-    // TODO Week 3: return fetch(`${API_BASE}/budget/${year}/${month}`)
-    return Promise.resolve(window.store.getBudgets(month, year));
+  addTransaction(data) {
+    return request("/transactions", {
+      method: "POST",
+      body:   JSON.stringify(data),
+    });
   },
 
-  async saveBudget(data) {
-    // TODO Week 3: return fetch(`${API_BASE}/budget`, { method:'POST', ... })
-    return Promise.resolve(window.store.saveBudget(data));
+  deleteTransaction(id) {
+    return request(`/transactions/${id}`, { method: "DELETE" });
   },
 
-  async deleteBudget(id) {
-    return Promise.resolve(window.store.deleteBudget(id));
+
+  // ── Summary (dashboard) ──────────────────────────────────────────────────
+
+  getSummary(month, year) {
+    // Convert 0-indexed month
+    return request(`/summary/${year}/${month + 1}`);
   },
 
-  // --- Categories ---
 
-  async getCategories() {
-    return Promise.resolve(window.store.getCategories());
+  // ── Budgets ───────────────────────────────────────────────────────────────
+
+  getBudgets(month, year) {
+    return request(`/budget/${year}/${month + 1}`);
   },
 
-  async addCategory(name) {
-    return Promise.resolve(window.store.addCategory(name));
+  saveBudget(data) {
+    return request("/budget", {
+      method: "POST",
+      body:   JSON.stringify({
+        ...data,
+        month: data.month + 1, // convert 0-indexed
+      }),
+    });
   },
 
-  async deleteCategory(id) {
-    return Promise.resolve(window.store.deleteCategory(id));
+  deleteBudget(id) {
+    return request(`/budget/${id}`, { method: "DELETE" });
   },
 };
