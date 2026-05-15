@@ -1,203 +1,100 @@
-// Store chart instances so we can destroy/recreate them
+/* charts.js — Chart.js rendering helpers */
+
 const chartInstances = {};
 
-// Color palette for categories
 const CHART_COLORS = [
-  '#2E6DB4', '#1D9E75', '#F0A500', '#E24B4A',
-  '#8B5CF6', '#EC4899', '#14B8A6', '#F97316',
+  '#2E6DB4','#1D9E75','#F0A500','#E24B4A',
+  '#8B5CF6','#EC4899','#14B8A6','#F97316',
 ];
 
-/**
- * Renders or updates the pie chart on the dashboard.
- * @param {Object} categoryTotals - { "Groceries": 210, "Rent": 900, ... }
- */
 function renderPieChart(categoryTotals) {
   const canvas = document.getElementById('pieChart');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
+  const ctx    = canvas.getContext('2d');
   const labels = Object.keys(categoryTotals);
   const data   = Object.values(categoryTotals);
-
-  // Destroy old chart if it exists
-  if (chartInstances.pie) {
-    chartInstances.pie.destroy();
-  }
-
-  if (labels.length === 0) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-
+  if (chartInstances.pie) chartInstances.pie.destroy();
+  if (labels.length === 0) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
   chartInstances.pie = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels,
-      datasets: [{
-        data,
-        backgroundColor: CHART_COLORS.slice(0, labels.length),
-        borderWidth: 2,
-        borderColor: '#fff',
-      }]
+      datasets: [{ data, backgroundColor: CHART_COLORS.slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: true,
+      responsive: true, maintainAspectRatio: true,
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { size: 11 }, padding: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label}: $${ctx.raw.toFixed(2)}`
-          }
-        }
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.raw.toFixed(2)}` } }
       }
     }
   });
 }
 
-/**
- * Renders or updates the 6-month bar chart on the dashboard.
- * @param {Array} monthlyData - array of { label: "Nov", total: 1200 }
- */
 function renderTrendChart(monthlyData) {
   const canvas = document.getElementById('trendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
   if (chartInstances.trend) chartInstances.trend.destroy();
-
   chartInstances.trend = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: monthlyData.map(m => m.label),
       datasets: [{
         label: 'Total Expenses',
-        data: monthlyData.map(m => m.total),
-        backgroundColor: monthlyData.map((m, i) =>
-          i === monthlyData.length - 1 ? '#2E6DB4' : '#B5D4F4'
-        ),
-        borderRadius: 4,
-        borderSkipped: false,
+        data:  monthlyData.map(m => m.total),
+        backgroundColor: monthlyData.map((m,i) => i === monthlyData.length-1 ? '#2E6DB4' : '#B5D4F4'),
+        borderRadius: 4, borderSkipped: false,
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` $${ctx.raw.toFixed(2)}`
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { callback: val => `$${val}` }
-        }
-      }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => `$${v}` } } }
     }
   });
 }
 
-/**
- * Renders the analytics page bar chart.
- * Same data shape as renderTrendChart but uses a different canvas.
- */
 function renderAnalyticsBarChart(monthlyData) {
   const canvas = document.getElementById('analyticsBarChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
   if (chartInstances.analyticsBar) chartInstances.analyticsBar.destroy();
-
   chartInstances.analyticsBar = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: monthlyData.map(m => m.label),
-      datasets: [{
-        label: 'Expenses',
-        data: monthlyData.map(m => m.expenses),
-        backgroundColor: '#B5D4F4',
-        borderRadius: 4,
-      }, {
-        label: 'Income',
-        data: monthlyData.map(m => m.income),
-        backgroundColor: '#A7F3D0',
-        borderRadius: 4,
-      }]
+      datasets: [
+        { label: 'Expenses', data: monthlyData.map(m => m.expenses), backgroundColor: '#B5D4F4', borderRadius: 4 },
+        { label: 'Income',   data: monthlyData.map(m => m.income),   backgroundColor: '#A7F3D0', borderRadius: 4 },
+      ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top' },
-        tooltip: {
-          callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { callback: val => `$${val}` }
-        }
-      }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => `$${v}` } } }
     }
   });
 }
 
-/**
- * Renders the income vs expense grouped bar chart on analytics page.
- */
 function renderIncomeVsExpenseChart(monthlyData) {
   const canvas = document.getElementById('incomeVsExpenseChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
   if (chartInstances.incomeVsExpense) chartInstances.incomeVsExpense.destroy();
-
   chartInstances.incomeVsExpense = new Chart(ctx, {
     type: 'line',
     data: {
       labels: monthlyData.map(m => m.label),
       datasets: [
-        {
-          label: 'Income',
-          data: monthlyData.map(m => m.income),
-          borderColor: '#1D9E75',
-          backgroundColor: 'rgba(29,158,117,0.1)',
-          tension: 0.3,
-          fill: true,
-        },
-        {
-          label: 'Expenses',
-          data: monthlyData.map(m => m.expenses),
-          borderColor: '#E24B4A',
-          backgroundColor: 'rgba(226,75,74,0.1)',
-          tension: 0.3,
-          fill: true,
-        }
+        { label: 'Income',   data: monthlyData.map(m => m.income),   borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.1)', tension: 0.3, fill: true },
+        { label: 'Expenses', data: monthlyData.map(m => m.expenses),  borderColor: '#E24B4A', backgroundColor: 'rgba(226,75,74,0.1)',  tension: 0.3, fill: true },
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top' },
-        tooltip: {
-          callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { callback: val => `$${val}` }
-        }
-      }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => ` $${ctx.raw.toFixed(2)}` } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => `$${v}` } } }
     }
   });
 }
